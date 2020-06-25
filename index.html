@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Atrangi</title>
+    <style>
+      *,
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/2.6.2/phaser.min.js"></script>
+    <script src="./assets/audio.js"></script>
+    <script src="./assets/img.js"></script>
+
+    <script>
+      window.FBPlayableOnCTAClick = () => {
+        typeof FbPlayableAd === 'undefined' ? '' : FbPlayableAd.onCTAClick();
+      };
+    </script>
+    <script>
+      End1 = {
+        init: function (param) {
+          // console.log(param);
+        },
+        create: function () {
+          this.bg = this.add.image(0, 0, 'bg');
+          this.endmsg = this.add.image(this.game.world.centerX, this.game.world.centerY, '2ndlast');
+          this.endmsg.anchor.setTo(0.5);
+
+          var style = { font: '80px Arial bold', fill: '#d60c70', align: 'center' };
+
+          this.t = game.add.text(this.game.world.centerX + 190, this.game.world.centerY - 65, '', style);
+          this.t.anchor.set(0.5);
+          this.t.text = score;
+          setTimeout(() => {
+            this.game.state.start('End2');
+          }, 2500);
+        },
+      };
+      End2 = {
+        create: function () {
+          this.bg = this.add.image(0, 0, 'bg');
+          this.endmsg = this.add.image(this.game.world.centerX, this.game.world.centerY, 'endslate');
+          this.endmsg.anchor.setTo(0.5);
+          this.game.input.onDown.add(this.ontouch.bind(this));
+        },
+        ontouch: function () {
+          window.FBPlayableOnCTAClick();
+          window.open('https://play.google.com/store/apps/details?id=com.graymatrix.did');
+        },
+      };
+
+      var score = 0;
+      var time = 30;
+      var hasExit = false;
+      var showOnce = true;
+      var soundPlay = true;
+      Instruction = {
+        init: function () {},
+        preload: function () {},
+        create: function () {
+          game.stage.backgroundColor = '#000';
+          game.physics.startSystem(Phaser.Physics.ARCADE);
+
+          this.loadImages();
+          this.createHand();
+          this.makeText();
+          this.sampleShow = this.add.image(-1110, -1110, 's1');
+          this.shows = this.game.add.group();
+          this.shows.enableBody = true;
+          this.createShow();
+          this.showCreator = this.game.time.events.loop(Phaser.Timer.SECOND * 0.6, this.createShow, this);
+          // var local = this;
+          this.timer = setInterval(
+            (game) => {
+              time--;
+              game.t1.text = time;
+              if (time > 27 && showOnce) {
+                showOnce = false;
+                // console.log('show');
+                game.instruction = game.add.image(game.game.world.centerX, game.game.height * 0.7, 'instructions');
+                game.instruction.anchor.setTo(0.5);
+                game.instructTween = game.game.add
+                  .tween(game.instruction)
+                  .to({ alpha: 0 }, 3000, Phaser.Easing.Exponential.In, true);
+              }
+              if (time <= 0) {
+                clearInterval(this.timer);
+                this.game.state.start('End1', true, false, score);
+              }
+            },
+            1000,
+            this
+          );
+          this.top = this.add.image(0, -180, 'top');
+          this.logo = this.add.image(this.game.world.centerX, 200, 'logo');
+          this.logo.anchor.setTo(0.5);
+
+          // this.mySound.play();
+          this.mySound = this.game.add.audio('gamesound', 1, false);
+          this.mySound.play();
+          // this.input.addDownCallback(function () {
+          //   if (game.sound.context.state === 'suspended') {
+          //     game.sound.context.resume();
+          //   }
+          // });
+        },
+        update: function () {
+          // if (soundPlay) {
+          //   soundPlay--;
+          //   this.mySound.play();
+          // }
+
+          this.handMove();
+          this.game.physics.arcade.overlap(this.hand, this.shows, this.killShow, null, this);
+          this.refreshShows();
+        },
+        handMove: function () {
+          // handle the left and right movement of the hand
+          if (this.cursor.left.isDown || this.hand.customParams.isMovingLeft) {
+            this.hand.body.velocity.x = -700;
+
+            // this.hand.play('left');
+          } else if (this.cursor.right.isDown || this.hand.customParams.isMovingRight) {
+            this.hand.body.velocity.x = 700;
+            // this.hand.play('right');
+          } else {
+            this.hand.body.velocity.x = 0;
+          }
+        },
+        ontouch: function () {
+          if (game.sound.context.state == 'suspended') {
+            game.sound.context.resume();
+          }
+          // if (soundPlay) {
+          //   console.log('ave to play sound');
+          //   soundPlay = false;
+          //   this.mySound.play();
+          // }
+          if (this.game.input.x < this.game.width / 2) {
+            // console.log('leftside');
+            this.hand.customParams.isMovingLeft = true;
+          } else {
+            this.hand.customParams.isMovingRight = true;
+            // console.log('rightside');
+          }
+        },
+        ontouchend: function () {
+          this.hand.customParams.isMovingRight = false;
+          this.hand.customParams.isMovingLeft = false;
+        },
+        loadImages: function () {
+          this.bg = this.add.image(0, 0, 'bg');
+          this.timer = this.add.image(this.game.world.width - 100, this.world.height - 100, 'timer');
+          this.timer.anchor.setTo(0.5);
+          this.score = this.add.image(this.game.world.centerX, this.game.world.height - 100, 'score');
+          this.score.anchor.setTo(0.5);
+
+          this.ribbon = this.add.image(this.game.world.centerX, this.world.height - 200, 'baseribbon');
+          this.ribbon.anchor.setTo(0.5);
+        },
+        createHand: function () {
+          this.hand = this.add.sprite(this.world.centerX, this.world.height - 500, 'hand');
+          this.hand.customParams = { isMovingLeft: false, isMovingRight: false };
+          this.hand.anchor.setTo(0.5);
+          // this.game.physics.arcade.enable(this.hand);
+          game.physics.arcade.enable(this.hand);
+          this.hand.body.collideWorldBounds = true;
+
+          this.hand.body.setSize(this.hand.width, this.hand.height / 5, 0, 0);
+
+          this.cursor = this.input.keyboard.createCursorKeys();
+          this.game.input.onDown.add(this.ontouch.bind(this));
+          this.game.input.onUp.add(this.ontouchend.bind(this));
+        },
+        createShow: function () {
+          //give me the first dead sprite
+          //37 phaser keeps track of all the objects added to it, even if we kill a sprite it does not mean its removed from memeory, its just out of rendering and can be reused
+          //38 to grab the first sprite--> this.barrels.getFirstExists(false); passing true gives the first alive sprite, and passing flase gives the first dead sprite
+          var show = this.shows.getFirstExists(false);
+          var random = Math.floor(Math.random() * 10);
+          console.log(random);
+          var randomX = this.sampleShow.width / 2 + Math.random() * (this.game.width - this.sampleShow.width);
+
+          if (!show) {
+            show = this.shows.create(this.game.width / 2, 0, 's' + random);
+          }
+          // show.myTween = this.game.add.tween(show).to({ alpha: 0.1 }, 2000, 'Linear', false);
+          //40 physics properties dont get reset with sprite.reset().
+          //42 making a sprite collide with world bounds--> barrel.body.collideWorldBounds = true;
+          // barrel.body.collideWorldBounds = true;
+          //41 to set the bounce property on a sprite-->barrel.body.bounce.set(1, 0.3);
+          // barrel.body.bounce.set(1, 0.3);
+          //39 to reset a sprite(it also makes it alive if its marked as dead) --> barrel.reset(this.levelData.goal.x, this.levelData.goal.y);
+          show.reset(randomX, 0);
+          show.loadTexture('s' + random);
+          show.anchor.setTo(0.5);
+          show.alpha = 1;
+          show.body.velocity.y = 500;
+          show.body.setSize(show.width / 2, show.height / 3, show.width / 4, show.height / 6);
+        },
+        refreshShows: function () {
+          this.shows.forEach(function (element) {
+            if (element.y > this.game.height - 300) {
+              element.kill();
+            }
+          }, this);
+        },
+        killShow: function (a, b) {
+          if (!hasExit) {
+            hasExit = true;
+            var elementTween = this.game.add.tween(b).to({ alpha: 0 }, 300, 'Linear', true);
+            //   console.log(score);
+            elementTween.onComplete.add((b) => {
+              b.kill();
+              score++;
+              // console.log(score);
+              this.t.text = score;
+              hasExit = false;
+            });
+          }
+        },
+        render: function () {
+          // game.debug.bodyInfo(this.hand, 100, 100);
+
+          game.debug.body(this.hand);
+          // game.debug.body(sprite2);
+        },
+        makeText: function () {
+          var style = { font: '80px Arial bold', fill: '#d60c70', align: 'center' };
+          var style1 = { font: '60px Arial bold', fill: '#fff', align: 'center' };
+
+          this.t = game.add.text(this.game.world.centerX + 110, this.game.world.height - 95, '0', style);
+          this.t.text = score;
+          // this.t.fixedToCamera = true;
+          this.t.anchor.set(0.5);
+          this.t1 = game.add.text(this.game.world.centerX + 437, this.game.world.height - 87, '0', style1);
+
+          // this.t.fixedToCamera = true;
+          this.t1.anchor.set(0.5);
+        },
+      };
+      var Boot = {
+        init: function () {
+          this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+          this.scale.fullScreenScaleMode = Phaser.ScaleManager.SHOW_ALL;
+          this.scale.compatibility.orientationFallback = 'viewport';
+          this.scale.pageAlignVertically = true;
+          this.scale.pageAlignHorizontally = true;
+          this.game.time.advancedTiming = true;
+          this.game.physics.startSystem(Phaser.Physics.ARCADE);
+        },
+        preload: function () {
+          this.load.image('bg', bg);
+          this.load.image('rsg', rsg);
+        },
+        create: function () {
+          this.game.stage.backgroundColor = 'purple';
+          this.game.state.start('ResourceLoader');
+        },
+      };
+
+      var ResourceLoader = {
+        init: function () {},
+        preload: function () {
+          this.bg = this.add.image(0, 0, 'bg');
+          this.rsg = this.add.image(this.game.world.centerX, this.game.world.centerY, 'rsg');
+          this.rsg.anchor.setTo(0.5);
+          this.rsg.alpha = 0;
+          this.introTween = this.game.add
+            .tween(this.rsg)
+            .to({ alpha: 1 }, 2000, Phaser.Easing.Exponential.In, true, 0, 0, true);
+
+          // load the other assets now
+          this.load.image('hand', hand);
+          this.load.image('instructions', instructions);
+          this.load.image('baseribbon', baseribbon);
+          this.load.image('2ndlast', secondLast);
+          this.load.image('endslate', endslate);
+          this.load.image('logo', logo);
+          this.load.image('timer', timer);
+          this.load.image('score', scoreimg);
+          this.load.image('s0', s0);
+          this.load.image('s1', s1);
+          this.load.image('s2', s2);
+          this.load.image('s3', s3);
+          this.load.image('s4', s4);
+          this.load.image('s5', s5);
+          this.load.image('s6', s6);
+          this.load.image('s7', s7);
+          this.load.image('s8', s8);
+          this.load.image('s9', s9);
+          this.load.image('top', topBar);
+          game.load.audio('gamesound', [
+            {
+              uri: gameSound,
+              type: 'mp3',
+            },
+          ]);
+          // this.game.load.audio('gamesound', './gameSound.mp3');
+          this.introTween.onComplete.add(this.doSomething, this);
+
+          // this.game.load.audio('music', gameSound);
+
+          // this.load.image('s7', '../images/s7.png');
+        },
+        create: function () {
+          // this.game.state.start('Instruction');
+        },
+        doSomething: function () {
+          this.game.state.start('Instruction');
+        },
+      };
+      var game = new Phaser.Game(1080, 1920, Phaser.AUTO);
+
+      game.state.add('Boot', Boot);
+      game.state.add('Instruction', Instruction); //
+      game.state.add('ResourceLoader', ResourceLoader);
+      game.state.add('End1', End1); //
+      game.state.add('End2', End2); //
+
+      game.state.start('Boot');
+    </script>
+  </body>
+</html>
